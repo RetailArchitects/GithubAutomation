@@ -1,7 +1,7 @@
 Flask==0.12.2
 flask-socketio
-flask-sqlalchemy
-psycopg2
+Flask-PyMongo
+blinker
 github-webhook==1.0.2
 PyGithub==1.35
 gunicorn==19.7.1

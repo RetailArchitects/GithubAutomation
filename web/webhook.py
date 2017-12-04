@@ -1,8 +1,6 @@
-from flask import Flask
-from flask import request
+from flask import Flask, request
 from flask_socketio import SocketIO
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm.exc import NoResultFound
+from flask_pymongo import PyMongo
 
 from github import Github
 
@@ -14,53 +12,67 @@ import json
 users = {}
 
 app = Flask(__name__)
-app.config['SECRETY_KEY'] = 'S3cret!!'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://ra:another!@db/github'
-db = SQLAlchemy(app)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'changemenow')
+app.config['MONGO_HOST'] = os.environ.get('MONGO_HOST','ragithub_db_1')
+mongo = PyMongo(app)
 socketio = SocketIO(app)
 
-class GitHubConfig(db.Model):
-  id = db.Column(db.Integer, primary_key=True)
-  repo_id = db.Column(db.Integer, nullable=False)
-
-AUTHORIZED_LOGINS = ('robneville73a',)
-ACCEPTED_LABELS = set(['Bug', 'Expedite', 'GERS Replacement', 'New', 'Project', 'SOW', 'UX'])
 UNAUTHORIZED_MSG = "Can't add issues to active sprint, milestone was unset."
 
 ZENHUB_API_TOKEN = os.environ['ZENHUB_API_TOKEN']
-REPO_ID = "112486602"
 ZENHUB_ROOT_URL = "https://api.zenhub.io"
 
 gh = Github(os.environ['GITHUB_USER'], os.environ['GITHUB_PASSWORD'])
-repo = gh.get_repo("RetailArchitects/webhook_testing")
 
-def get_config_record():
-  return GitHubConfig.query.one()
+@app.before_first_request
+def setup_config():
+  repo_id = os.environ['DEFAULT_REPO_ID']
+  repo_name = os.environ['DEFAULT_REPO_NAME']
+  mongo.db.config.replace_one(
+    {
+      "repo_id": repo_id
+    },
+    {
+      "repo_id": repo_id,
+      "repository_name": repo_name,
+      "active_release": {
+        "name": "release1.0",
+        "sp_target": 5
+      },
+      "accepted_labels": [
+        'Bug', 'Expedite', 'GERS Replacement', 'New', 'Project', 'SOW', 'UX'
+      ],
+      "authorized_logins": [
+        'robneville73a',
+      ]
+    }, True
+  )
 
-@app.route('/setup_db/<repo_id>')
-def setup_db(repo_id):
-  db.create_all()
-  config = None
-  try:
-    config = get_config_record()
-  except NoResultFound:
-    config = GitHubConfig()
-    config.repo_id = int(repo_id)
-    db.session.add(config)
-    db.session.commit()
-  finally:
-    app.logger.info(config.repo_id)
-    return "OK"
+def get_zenhub_issue(repo_id, issue_id):
+  url = '{root}/p1/repositories/{repo}/issues/{issue_number}'.format(
+    root=ZENHUB_ROOT_URL,
+    repo=repo_id,
+    issue_number=issue_id
+  )
+  headers = {
+    'X-Authentication-Token': ZENHUB_API_TOKEN
+  }
+  response = requests.get(url, headers=headers)
+  return response.json()
 
 @app.route('/github_webhook', methods=['POST'])
 def on_milestone():
   event = request.get_json()
+  config = mongo.db.config.find_one()
+  repo = gh.get_repo(config['repository_name'])
   action = event['action']
-  repo_id = str(get_config_record().repo_id)
+  repo_id = config['repo_id']
+  
   if action == 'milestoned':
     allowed = True
     message = None
-    authorized = event['sender']['login'] in AUTHORIZED_LOGINS
+    authorized = event['sender']['login'] in config['authorized_logins']
+    accepted_labels = config['accepted_labels']
     issue = event['issue']
     issue_obj = repo.get_issue(issue['number'])
     status = issue['milestone']['description']
@@ -74,9 +86,9 @@ def on_milestone():
     elif not issue_obj.assignee:
       allowed = False
       message = "Must be assigned before it can be scheduled in a milestone."
-    elif len(set([l.name for l in issue_obj.labels]).intersection(ACCEPTED_LABELS)) == 0:
+    elif len(set([l.name for l in issue_obj.labels]).intersection(set(accepted_labels))) == 0:
       allowed = False
-      message = "To be scheduled, must have one of the following labels: " + ", ".join(list(ACCEPTED_LABELS))
+      message = "To be scheduled, must have one of the following labels: " + ", ".join(accepted_labels)
     elif status == 'active' and not authorized:
       allowed = False
       message = "You don't have authority to add issues to active milestone"
@@ -95,21 +107,9 @@ def on_milestone():
 
 @socketio.on('store-client-data')
 def associate_user(data):
-  app.logger.info(data['gh_user'])
-  users[data['gh_user']] = request.sid
-
-
-def get_zenhub_issue(repo_id, issue_id):
-  url = '{root}/p1/repositories/{repo}/issues/{issue_number}'.format(
-    root=ZENHUB_ROOT_URL,
-    repo=repo_id,
-    issue_number=issue_id
-  )
-  headers = {
-    'X-Authentication-Token': ZENHUB_API_TOKEN
-  }
-  response = requests.get(url, headers=headers)
-  return response.json()
+  browser_plugin_user = data.get('gh_user')
+  if browser_plugin_user:
+    users[browser_plugin_user] = request.sid
 
 if __name__ == '__main__':
   socketio.run(app, debug=True, host='0.0.0.0')

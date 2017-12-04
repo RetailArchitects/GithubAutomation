@@ -12,19 +12,16 @@ services:
       - GITHUB_USER
       - GITHUB_PASSWORD
       - ZENHUB_API_TOKEN
+      - SECRET_KEY
+      - MONGO_HOST
+      - DEFAULT_REPO_ID
+      - DEFAULT_REPO_NAME
     depends_on:
       - db
 
-  data:
-    image: postgres:10-alpine
-    volumes:
-      - /var/lib/postgresql
-    command: "true"
-
   db:
-    restart: always
     build: ./db/
-    volumes_from:
-      - data
+    volumes:
+      - ./data:/data/db
     ports:
-      - "5432:5432"
+      - "27017:27017"

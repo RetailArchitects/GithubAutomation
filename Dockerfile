@@ -5,4 +5,5 @@ WORKDIR /app
 RUN pip install -r requirements.txt
 ENTRYPOINT [ "python" ]
 WORKDIR /code/web
+ENV FLASK_APP=webhook.py
 CMD ["webhook.py"]

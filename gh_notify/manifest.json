@@ -1,0 +1,23 @@
+{
+  "manifest_version": 2,
+
+  "name": "Notifications for GitHub/ZenHub use",
+  "description": "Does alert-y stuff",
+  "version": "1.0",
+
+  "options_ui": {
+    "page": "options.html",
+    "chrome_style": true
+  },
+
+  "background": {
+    "page": "background.html",
+    "persistent": false
+  },
+
+  "permissions": [
+    "activeTab",
+    "notifications",
+    "storage"
+  ]
+}

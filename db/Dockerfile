@@ -1,5 +1,1 @@
-FROM postgres:10-alpine
-
-ENV POSTGRES_USER ra
-ENV POSTGRES_PASSWORD another!
-ENV POSTGRES_DB github
+FROM mongo
