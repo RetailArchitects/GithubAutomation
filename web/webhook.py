@@ -13,6 +13,9 @@ import json
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'changemenow')
 app.config['MONGO_HOST'] = os.environ.get('MONGO_HOST','ragithub_db_1')
+mongo_uri = os.environ.get('MONGO_URI', None)
+if mongo_uri:
+  app.config['MONGO_URI'] = mongo_uri
 mongo = PyMongo(app)
 
 ZENHUB_API_TOKEN = os.environ['ZENHUB_API_TOKEN']
