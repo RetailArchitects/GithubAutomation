@@ -16,6 +16,7 @@ services:
       - MONGO_HOST
       - DEFAULT_REPO_ID
       - DEFAULT_REPO_NAME
+      - SLACK_TOKEN
     depends_on:
       - db
 
