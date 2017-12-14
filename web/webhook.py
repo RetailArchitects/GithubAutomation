@@ -241,6 +241,10 @@ def notify_error(issue, message, username, unset_milestone=None):
       channel=slack_user_id,
       text=message
     )
+
+@app.route('/')
+def ok():
+  return 'OK'
   
 @app.route('/zenhub_webhook', methods=['POST'])
 def zenhub_event():
