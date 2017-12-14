@@ -1,1 +1,1 @@
-web: gunicorn ./web:webhook
+web: gunicorn webhook:app
