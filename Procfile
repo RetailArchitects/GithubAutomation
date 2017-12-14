@@ -1,1 +1,1 @@
-web: gunicorn web.webhook:app
+web: gunicorn web.webhook:app --log-file -
