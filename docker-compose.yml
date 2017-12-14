@@ -17,6 +17,8 @@ services:
       - DEFAULT_REPO_ID
       - DEFAULT_REPO_NAME
       - SLACK_TOKEN
+      - ADMIN_USER
+      - ADMIN_PASSWD
     depends_on:
       - db
 

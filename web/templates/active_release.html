@@ -1,0 +1,15 @@
+<!doctype html>
+<h1>Active Release Settings</h1>
+
+<form action="" method="POST" name="release">
+    {{ form.hidden_tag() }}
+    <p>
+        Enter new Active Release Name:<br> {{ form.name }}
+    </p>
+    <p>
+        Enter new Story Point Target:<br> {{ form.sp_target }}
+    </p>
+    <p>
+        <input type="submit" value="Update Release">
+    </p>
+</form>

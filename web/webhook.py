@@ -1,5 +1,6 @@
-from flask import Flask, request, g
+from flask import Flask, request, g, render_template
 from flask_pymongo import PyMongo
+from flask_basicauth import BasicAuth
 
 from github import Github
 
@@ -10,8 +11,12 @@ import requests
 import os
 import json
 
+from forms import ReleaseConfigForm
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'changemenow')
+
+app.config['WTF_CSRF_ENABLED'] = True
 
 mongo_uri = os.environ.get('MONGODB_URI', None)
 if mongo_uri:
@@ -19,6 +24,11 @@ if mongo_uri:
 else:
   app.config['MONGO_HOST'] = os.environ.get('MONGO_HOST','ragithub_db_1')  
 mongo = PyMongo(app)
+
+app.config['BASIC_AUTH_USERNAME'] = os.environ.get('ADMIN_USER', 'admin')
+app.config['BASIC_AUTH_PASSWORD'] = os.environ.get('ADMIN_PASSWD', 'passwd')
+
+basic_auth = BasicAuth(app)
 
 ZENHUB_API_TOKEN = os.environ['ZENHUB_API_TOKEN']
 ZENHUB_ROOT_URL = "https://api.zenhub.io"
@@ -229,7 +239,6 @@ def check_issue_ok_to_change_estimate(issue, zenhub_issue):
     raise MilestoneWarning("Please don't change estimates on closed tickets")
   
 def notify_error(issue, message, username, unset_milestone=None):
-  app.logger.info("here")
   unset_milestone = unset_milestone if unset_milestone else True
   if unset_milestone:
     issue.edit(milestone=None)
@@ -292,6 +301,23 @@ def on_milestone():
       notify_error(issue_obj, str(e), user, e.unset_milestone)
 
   return "OK"
+
+@app.route('/release_settings', methods=['GET', 'POST'])
+@basic_auth.required
+def release_config():
+  active_release = g.config['active_release']
+  form = ReleaseConfigForm()
+  if form.validate_on_submit():
+    g.config['active_release']['name'] = form.name.data
+    g.config['active_release']['sp_target'] = form.sp_target.data
+    mongo.db.config.update_one({"repo_id": g.config['repo_id']},{"$set": g.config}, upsert=False)
+    
+  form.name.data = active_release['name']
+  form.sp_target.data = active_release['sp_target']
+
+  return render_template('active_release.html', 
+                          active_release=active_release,
+                          form=form)
 
 if __name__ == '__main__':
   app.run(debug=True, host='0.0.0.0')
