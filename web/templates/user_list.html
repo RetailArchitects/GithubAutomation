@@ -1,0 +1,8 @@
+<ul>
+    {% for user in users %}
+    <li>
+        GitHub User: {{user['github_user']}}
+        <!-- <br> Slack User: {{user['slack_user']}}<br> Slack User ID: {{user['slack_user_id']}} -->
+    </li>
+    {% endfor %}
+</ul>

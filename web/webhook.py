@@ -319,5 +319,11 @@ def release_config():
                           active_release=active_release,
                           form=form)
 
+@app.route('/users')
+@basic_auth.required
+def users():
+  users = g.config['github_slack_users']
+  return render_template('user_list.html', users=users)
+
 if __name__ == '__main__':
   app.run(debug=True, host='0.0.0.0')
