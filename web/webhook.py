@@ -13,9 +13,9 @@ import json
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'changemenow')
 
-mongo_uri = os.environ.get('MONGO_URI', None)
+mongo_uri = os.environ.get('MONGODB_URI', None)
 if mongo_uri:
-  app.config['MONGO_URI'] = mongo_uri
+  app.config['MONGODB_URI'] = mongo_uri
 else:
   app.config['MONGO_HOST'] = os.environ.get('MONGO_HOST','ragithub_db_1')  
 mongo = PyMongo(app)
