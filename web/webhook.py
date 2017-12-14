@@ -269,7 +269,7 @@ def zenhub_event():
     elif event_type == 'issue_transfer':
       app.logger.info('Issue transfered event %r' % event)
   except MilestoneException as e:
-    notify_error(issue_obj, e.message, gh_username, e.unset_milestone)
+    notify_error(issue_obj, repr(e), gh_username, e.unset_milestone)
 
   return "OK"
 
@@ -289,7 +289,7 @@ def on_milestone():
       check_issue_has_valid_label(issue_obj)
       check_issue_within_targets(zenhub_issue)
     except MilestoneException as e:
-      notify_error(issue_obj, e.message, user, e.unset_milestone)
+      notify_error(issue_obj, repr(e), user, e.unset_milestone)
 
   return "OK"
 
