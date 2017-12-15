@@ -11,7 +11,7 @@ import requests
 import os
 import json
 
-from forms import ReleaseConfigForm
+from .forms import ReleaseConfigForm
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'changemenow')
