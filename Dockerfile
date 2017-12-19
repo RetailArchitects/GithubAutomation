@@ -1,9 +1,8 @@
-FROM ubuntu:latest
-RUN apt-get update -y && apt-get install -y python-pip python-dev build-essential && pip install --upgrade pip
-COPY . /app
-WORKDIR /app
-RUN pip install -r requirements.txt
-ENTRYPOINT [ "python" ]
-WORKDIR /code/web
-ENV FLASK_APP=webhook.py
-CMD ["webhook.py"]
+FROM python:3-alpine
+WORKDIR /usr/src/app
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+#ENV FLASK_APP=webhook.py
+CMD ["python", "./web/webhook.py"]
